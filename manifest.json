@@ -1,0 +1,19 @@
+{
+  "name": "CapTok",
+  "short_name": "CapTok",
+  "description": "Ваше приложение CapTok",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://i.ibb.co/fzPd94Mp/IMG-7112.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}
