@@ -1,0 +1,1865 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CapTok - captok.studio</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="CapTok">
+    <link rel="apple-touch-icon" href="https://i.ibb.co/fzPd94Mp/IMG-7112.jpg">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: #000;
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 430px;
+            height: 100%;
+            background: #000;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        @media (min-width: 431px) {
+            .app-container {
+                height: 880px;
+                border-radius: 36px;
+                border: 8px solid #222;
+                box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+            }
+        }
+
+        /* СПЛЭШ СКРИН */
+        #splash-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease;
+        }
+
+        .splash-logo {
+            font-size: 64px;
+            font-weight: 900;
+            color: transparent;
+            -webkit-text-stroke: 2px #00f0ff;
+            text-shadow: 0 0 15px rgba(0, 240, 255, 0.6);
+            margin-bottom: 10px;
+        }
+
+        .splash-title {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: #fff;
+            margin-bottom: 30px;
+        }
+
+        #stuck-ui {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 40px;
+            animation: fadeIn 0.5s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .stuck-text {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+        .stuck-btn {
+            background: #00f0ff;
+            color: #000;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 24px;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+            transition: transform 0.2s ease;
+        }
+        .stuck-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* ОСНОВНОЙ КОНТЕНТ */
+        .main-content {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tab-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            background: #111;
+        }
+
+        .tab-content.active {
+            display: flex;
+        }
+
+        /* ЛЕНТА ВИДЕО */
+        #feed-tab {
+            background: #050505;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feed-container {
+            width: 100%;
+            height: 100%;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+            scrollbar-width: none;
+            scroll-behavior: smooth;
+        }
+        .feed-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .video-item {
+            width: 100%;
+            height: 100%;
+            scroll-snap-align: start;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 20px;
+        }
+
+        .video-mock-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 80px;
+            background: #111;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        .video-mock-bg img, .video-mock-bg video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .play-state-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            font-size: 64px;
+            z-index: 5;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.8);
+        }
+        .play-state-indicator.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .video-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.9) 100%);
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .video-info {
+            position: absolute;
+            left: 15px;
+            bottom: 30px;
+            right: 80px;
+            z-index: 3;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+
+        .video-author-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            pointer-events: auto;
+            cursor: pointer;
+        }
+
+        .story-ring {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid #00f0ff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #333;
+            overflow: hidden;
+        }
+        .story-ring img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-author-name {
+            font-weight: bold;
+            font-size: 15px;
+            color: #fff;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+        }
+
+        .video-desc {
+            font-size: 14px;
+            color: #f1f1f1;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+            line-height: 1.3;
+        }
+
+        .video-tags {
+            font-size: 14px;
+            color: #4da6ff;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+            line-height: 1.3;
+            margin-top: 2px;
+        }
+
+        .manage-stats-btn {
+            background: #00f0ff;
+            color: #000;
+            width: 100%;
+            padding: 10px;
+            border-radius: 4px;
+            border: none;
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 8px;
+            cursor: pointer;
+            pointer-events: auto;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 240, 255, 0.4);
+            transition: transform 0.1s;
+        }
+        .manage-stats-btn:active {
+            transform: scale(0.97);
+        }
+
+        .video-sidebar {
+            position: absolute;
+            right: 15px;
+            bottom: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            z-index: 3;
+        }
+
+        .side-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 26px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+        }
+
+        .side-btn span.count {
+            font-size: 12px;
+            margin-top: 4px;
+            font-weight: bold;
+        }
+
+        .heart-icon { transition: filter 0.2s, transform 0.2s; }
+        .heart-icon.gray { filter: grayscale(100%); opacity: 0.7; }
+
+        /* ПОЛНОЭКРАННЫЙ ПРОСМОТР */
+        #story-modal {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            z-index: 1500;
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+        #story-modal.active { transform: translateY(0); }
+
+        .story-bg-preview {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1; display: flex; justify-content: center; align-items: center;
+            background: #111; overflow: hidden; cursor: pointer;
+        }
+        .story-bg-preview img, .story-bg-preview video { width: 100%; height: 100%; object-fit: cover; }
+
+        .story-top-panel {
+            display: flex; align-items: center; gap: 12px; z-index: 3; padding: 20px; pointer-events: none;
+        }
+        .story-author-avatar {
+            width: 36px; height: 36px; border-radius: 50%; border: 2px solid #00f0ff; overflow: hidden; background: #222;
+        }
+        .story-author-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .story-author-name { font-weight: bold; font-size: 15px; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+
+        .story-bottom-panel {
+            display: flex; flex-direction: column; align-items: flex-start; gap: 8px; z-index: 3; padding: 20px;
+            background: linear-gradient(180deg, transparent, rgba(0,0,0,0.8)); pointer-events: none;
+        }
+        .story-title-text { font-size: 16px; font-weight: 600; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.9); }
+        .story-views-row {
+            display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: bold; color: #00f0ff;
+            background: rgba(0,0,0,0.5); padding: 4px 12px; border-radius: 14px; border: 1px solid rgba(0, 240, 255, 0.3);
+        }
+
+        /* КАТАЛОГ И ПОИСК */
+        #catalog-tab, #search-tab, #profile-tab { padding: 15px; overflow-y: auto; }
+        .catalog-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; }
+        .catalog-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .catalog-card { background: #1a1a1a; border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 8px; cursor: pointer; border: 1px solid #333; }
+        .catalog-card h4 { font-size: 14px; }
+        .catalog-card p { font-size: 12px; color: #888; }
+        
+        .search-input { width: 100%; padding: 12px 16px; background: #222; border: 1px solid #333; border-radius: 12px; color: #fff; font-size: 16px; margin-bottom: 15px; }
+        .search-result-item { background: #181818; padding: 12px; border-radius: 8px; display: flex; align-items: center; gap: 12px; cursor: pointer; margin-bottom:10px; }
+        
+        /* ТРЕНДЫ */
+        .trends-section { margin-bottom: 20px; }
+        .trends-section h4 { font-size: 14px; color: #888; margin-bottom: 10px; font-weight: normal; }
+        .trend-tag { background: #111; color: #00f0ff; padding: 6px 12px; border-radius: 12px; font-size: 13px; border: 1px solid #00f0ff; display: inline-block; margin-right: 8px; margin-bottom: 8px; cursor: pointer; }
+
+        /* ПРОФИЛЬ */
+        .profile-header {
+            display: flex; flex-direction: column; align-items: center; padding: 15px 10px; border-bottom: 1px solid #222; position: relative;
+        }
+        .speech-bubble {
+            position: absolute; top: 0px; z-index: 100; background: #222; border: 1px solid #00f0ff; padding: 6px 12px; border-radius: 14px; font-size: 12px; color: #00f0ff; font-weight: bold; animation: floatBubble 2s ease-in-out infinite alternate;
+        }
+        @keyframes floatBubble { from { transform: translateY(0); } to { transform: translateY(-4px); } }
+        .profile-avatar-wrapper { position: relative; cursor: pointer; margin-top: 25px; margin-bottom: 12px; }
+        .profile-avatar { width: 80px; height: 80px; border-radius: 50%; background: #333; border: 2px solid #00f0ff; display: flex; justify-content: center; align-items: center; font-size: 32px; overflow: hidden; }
+        .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .avatar-edit-badge { position: absolute; bottom: 0; right: 0; background: #00f0ff; color: #000; font-size: 10px; padding: 2px 6px; border-radius: 10px; font-weight: bold; }
+        .profile-name-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+        .profile-name { font-size: 18px; font-weight: bold; }
+        .pencil-icon { font-size: 15px; cursor: pointer; transition: transform 0.2s ease; }
+        .profile-bio { font-size: 13px; color: #aaa; text-align: center; max-width: 280px; }
+        .profile-menu-item { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #181818; font-size: 15px; cursor: pointer; }
+
+        /* МИНИАТЮРЫ 9:16 */
+        .section-video-wrapper { padding: 15px 0; display: flex; flex-direction: column; gap: 10px; }
+        .section-video-label { color: #fff; font-size: 15px; font-weight: bold; }
+        .videos-grid-container { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
+        .videos-grid-container::-webkit-scrollbar { display: none; }
+        .video-rect-9-16 { min-width: 120px; width: 120px; height: 213px; background: #1a1a1a; border-radius: 10px; border: 1px solid #333; position: relative; overflow: hidden; cursor: pointer; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.5); flex-shrink: 0; }
+        .video-rect-9-16 img, .video-rect-9-16 video { width: 100%; height: 100%; object-fit: cover; }
+
+        /* ДАННЫЕ ПРОФИЛЯ */
+        .profile-data-section {
+            background: #111; padding: 20px; border-top: 1px solid #222; margin-top: 10px;
+        }
+        .profile-data-title { font-size: 16px; font-weight: bold; color: #fff; margin-bottom: 15px; }
+        .profile-data-row { font-size: 14px; color: #aaa; margin-bottom: 10px; display: flex; justify-content: space-between; }
+        .profile-data-val { color: #fff; font-weight: bold; }
+
+        /* СТРАНИЦА УПРАВЛЕНИЯ СТАТИСТИКОЙ */
+        #stats-page {
+            position: absolute; top: 0; left: 100%; width: 100%; height: 100%;
+            background: #000; z-index: 1000; transition: left 0.3s ease;
+            display: flex; flex-direction: column; overflow-y: auto; padding: 20px;
+        }
+        #stats-page.active { left: 0; }
+        
+        .refresh-indicator {
+            text-align: center; color: #888; font-size: 14px; height: 0; overflow: hidden; transition: height 0.3s, margin 0.3s;
+        }
+
+        .stats-header-top { display: flex; align-items: center; margin-bottom: 30px; margin-top: 10px; }
+        .css-back-arrow {
+            width: 14px; height: 14px; border-top: 3px solid #fff; border-left: 3px solid #fff;
+            transform: rotate(-45deg); cursor: pointer; margin-right: 20px;
+        }
+        
+        .stats-video-info-block { display: flex; gap: 15px; margin-bottom: 40px; align-items: center; }
+        .stats-thumb-container {
+            width: 90px; height: 160px; background: #222; border-radius: 8px; border: 1px solid #333;
+            overflow: hidden; display: flex; justify-content: center; align-items: center; flex-shrink: 0;
+        }
+        .stats-thumb-container img, .stats-thumb-container video { width: 100%; height: 100%; object-fit: cover; }
+        
+        .stats-text-content { display: flex; flex-direction: column; gap: 8px; justify-content: center;}
+        .stats-title-huge { font-size: 24px; font-weight: bold; color: #fff; line-height: 1.2; word-break: break-word; }
+        .stats-time-gray { font-size: 14px; color: #888; font-weight: 500;}
+
+        .stats-numbers-block { display: flex; flex-direction: column; gap: 5px; }
+        .stats-views-huge { font-size: 48px; font-weight: 900; color: #fff; letter-spacing: -1px; }
+        .stats-views-label { font-size: 16px; color: #888; margin-bottom: 25px; }
+
+        .stats-icons-row { display: flex; gap: 20px; font-size: 18px; color: #fff; font-weight: bold; }
+        .stats-icons-row div { display: flex; align-items: center; gap: 8px; }
+
+        .ai-status-box { margin-top: 40px; padding: 15px; background: #111; border: 1px solid #333; border-radius: 12px; }
+        .ai-status-title { font-size: 14px; color: #00f0ff; margin-bottom: 5px; font-weight: bold; }
+        .ai-status-desc { font-size: 12px; color: #aaa; line-height: 1.4; }
+
+        /* УВЕДОМЛЕНИЯ В СПИСКЕ */
+        #notif-list-container { padding: 10px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+        .notif-item { display: flex; align-items: center; gap: 15px; padding: 15px; background: #1a1a1a; border-radius: 12px; border: 1px solid #333; }
+        .notif-icon { font-size: 24px; background: #222; padding: 10px; border-radius: 50%; display: flex; justify-content: center; align-items: center; }
+        .notif-text { font-size: 14px; color: #fff; line-height: 1.4; }
+        .notif-text small { color: #888; font-size: 12px; }
+
+        /* ПАНЕЛЬ КОММЕНТАРИЕВ */
+        #comments-modal {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 65%;
+            background: #111; z-index: 2500; display: none; flex-direction: column;
+            border-top-left-radius: 20px; border-top-right-radius: 20px;
+            transform: translateY(100%); transition: transform 0.3s ease;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.5); border-top: 1px solid #333;
+        }
+        #comments-modal.active { transform: translateY(0); }
+        .comments-header { padding: 15px; text-align: center; font-weight: bold; border-bottom: 1px solid #222; position: relative; font-size: 16px; }
+        .close-comments { position: absolute; right: 20px; top: 15px; cursor: pointer; font-size: 18px; color: #aaa; }
+        .comments-list { flex: 1; overflow-y: auto; padding: 20px 15px; display: flex; flex-direction: column; gap: 20px; }
+        .comment-item { display: flex; gap: 12px; }
+        .comment-avatar { width: 36px; height: 36px; border-radius: 50%; background: #333; display: flex; justify-content: center; align-items: center; font-size: 16px; flex-shrink: 0; border: 1px solid #555; }
+        .comment-content { display: flex; flex-direction: column; }
+        .comment-author { font-size: 13px; color: #888; margin-bottom: 4px; font-weight: bold; }
+        .comment-text { font-size: 14px; color: #fff; line-height: 1.3; }
+
+        /* ТОСТ И МОДАЛКИ */
+        #toast-notification {
+            position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
+            background: rgba(0, 0, 0, 0.85); border: 1px solid #00f0ff; color: #fff; padding: 8px 16px;
+            border-radius: 20px; font-size: 13px; z-index: 3000; opacity: 0; transition: all 0.3s ease; pointer-events: none;
+            text-align: center;
+        }
+        #toast-notification.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        #nickname-modal, #story-publish-editor {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85);
+            z-index: 2000; display: none; justify-content: center; align-items: center; padding: 30px;
+        }
+        .nickname-box, .story-publish-box {
+            background: #1f1f1f; padding: 20px; border-radius: 16px; width: 100%; max-width: 320px; display: flex; flex-direction: column; gap: 15px; border: 1px solid #333;
+        }
+        .nickname-input, .story-publish-input {
+            width: 100%; padding: 12px; background: #111; border: 1px solid #444; border-radius: 8px; color: #fff; font-size: 15px;
+        }
+        .nickname-btn, .publish-btn {
+            background: #00f0ff; color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer;
+        }
+        
+        /* ТЕГИ ПУБЛИКАЦИИ */
+        .selectable-tag { background: #222; border: 1px solid #444; border-radius: 12px; padding: 6px 12px; font-size: 13px; cursor: pointer; color: #888; transition: all 0.2s; }
+        .selectable-tag.selected { background: #00f0ff; color: #000; border-color: #00f0ff; font-weight: bold; }
+
+        .sub-page { position: absolute; top: 0; left: 100%; width: 100%; height: 100%; background: #111; z-index: 300; transition: left 0.3s ease; display: flex; flex-direction: column; }
+        .sub-page.active { left: 0; }
+        .sub-header { padding: 15px 20px; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid #222; font-size: 18px; font-weight: bold; }
+
+        /* КАМЕРА */
+        #camera-modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 500; display: none; flex-direction: column; justify-content: space-between; padding: 20px; }
+        .camera-preview-box { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #111; z-index: -1; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+        #camera-video, #captured-image-preview, #captured-video-preview { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; }
+        #captured-image-preview, #captured-video-preview { display: none; z-index: 1; }
+        .camera-header { display: flex; justify-content: space-between; align-items: center; z-index: 2; }
+        .close-cam { background: rgba(0,0,0,0.5); border: none; color: #fff; width: 36px; height: 36px; border-radius: 50%; font-size: 18px; cursor: pointer; }
+        
+        .create-modes { display: flex; justify-content: center; gap: 14px; font-weight: bold; font-size: 14px; background: rgba(0,0,0,0.4); padding: 6px 14px; border-radius: 20px; align-items: center;}
+        .create-mode { color: #aaa; cursor: pointer; transition: color 0.2s; }
+        .create-mode.active { color: #00f0ff; }
+        
+        .camera-footer { display: flex; justify-content: space-around; align-items: center; margin-bottom: 20px; z-index: 2; }
+        .gallery-preview-btn { width: 50px; height: 50px; background: #222; border-radius: 10px; border: 2px solid #555; display: flex; justify-content: center; align-items: center; font-size: 20px; cursor: pointer; overflow: hidden; }
+        .record-btn { width: 76px; height: 76px; background: #00f0ff; border-radius: 50%; border: 4px solid #fff; cursor: pointer; box-shadow: 0 0 15px rgba(0,240,255,0.5); transition: transform 0.2s, opacity 0.2s; }
+        .record-btn.recording { background: #ff334b; transform: scale(1.1); animation: pulseRecord 1s infinite alternate; }
+        @keyframes pulseRecord { from { box-shadow: 0 0 10px #ff334b; } to { box-shadow: 0 0 25px #ff334b; } }
+
+        /* НАВИГАЦИЯ */
+        .bottom-nav { height: 60px; background: #0b0b0b; border-top: 1px solid #1a1a1a; display: flex; justify-content: space-around; align-items: center; z-index: 100; position: relative; }
+        .nav-item { background: none; border: none; color: #777; font-size: 12px; display: flex; flex-direction: column; align-items: center; cursor: pointer; flex: 1; }
+        .nav-item.active { color: #00f0ff; }
+        .nav-center-btn { width: 48px; height: 48px; background: #fff; border-radius: 50%; border: none; display: flex; justify-content: center; align-items: center; font-size: 24px; color: #000; cursor: pointer; box-shadow: 0 4px 10px rgba(255,255,255,0.2); }
+        #hidden-file-input, #hidden-avatar-input { display: none; }
+
+        /* ФИОЛЕТОВЫЙ БЛОК ЧЕЛЕНДЖЕЙ */
+        .neon-challenge-box {
+            background: #000;
+            border: 3px solid #bd00ff;
+            box-shadow: 0 0 15px rgba(189, 0, 255, 0.7);
+            border-radius: 0px !important;
+            padding: 15px;
+            margin: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .neon-challenge-title {
+            color: #fff;
+            font-weight: bold;
+            font-size: 16px;
+            letter-spacing: 0.5px;
+        }
+        .neon-challenge-tags {
+            display: flex;
+            gap: 12px;
+        }
+        .neon-challenge-tag {
+            color: #bd00ff;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            text-shadow: 0 0 5px rgba(189, 0, 255, 0.5);
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+
+    <div id="splash-screen">
+        <div class="splash-logo">D</div>
+        <div class="splash-title">Ты тупой</div>
+        
+        <div id="stuck-ui">
+            <div class="stuck-text">Застряли? / Stuck?</div>
+            <button class="stuck-btn" onclick="enterApp(true)">Тех.починка</button>
+        </div>
+    </div>
+
+    <div id="toast-notification">Ты смотришь ролик!</div>
+
+    <div id="nickname-modal">
+        <div class="nickname-box">
+            <h3 id="modal-title-text"> ник поставлен</h3>
+            <input type="text" class="nickname-input" id="nickname-input-field" placeholder="Ваш новый ник...">
+            <button class="nickname-btn" onclick="saveNickname()">OK</button>
+        </div>
+    </div>
+
+    <div id="comments-modal">
+        <div class="comments-header">
+            <span id="comments-modal-title"> (0)</span>
+            <div class="close-comments" onclick="closeComments()">✕</div>
+        </div>
+        <div class="comments-list" id="comments-list-container">
+            </div>
+    </div>
+
+    <div id="stats-page">
+        <div class="refresh-indicator" id="stats-refresh-text">Обновление...</div>
+        
+        <div class="stats-header-top">
+            <div class="css-back-arrow" onclick="closeStats()"></div>
+        </div>
+        
+        <div class="stats-video-info-block">
+            <div class="stats-thumb-container" id="stats-page-thumb"></div>
+            <div class="stats-text-content">
+                <div class="stats-title-huge" id="stats-page-title">Название</div>
+                <div class="stats-time-gray" id="stats-page-time">0 минут назад</div>
+            </div>
+        </div>
+        
+        <div class="stats-numbers-block">
+            <div class="stats-views-huge" id="stats-page-views">0</div>
+            <div class="stats-views-label" id="stats-views-label-text">Просмотры</div>
+            
+            <div class="stats-icons-row">
+                <div>❤️ <span id="stats-page-likes">0</span></div>
+                <div>💬 <span id="stats-page-comments">0</span></div>
+            </div>
+        </div>
+
+        <div class="ai-status-box">
+            <div class="ai-status-title" id="stats-ai-title">Статус алгоритма:</div>
+            <div class="ai-status-desc" id="stats-page-ai-desc">ИИ анализирует видео...</div>
+        </div>
+    </div>
+
+    <div id="story-modal" onclick="closeStory(event)">
+        <div class="story-bg-preview" id="story-bg-view" onclick="toggleModalVideoPlay(event)">
+            <div class="play-state-indicator" id="modal-play-indicator">⏸️</div>
+        </div>
+        <div class="story-top-panel">
+            <div class="story-author-avatar" id="story-modal-avatar">🧢</div>
+            <div class="story-author-name" id="story-modal-author">@moj_kanal</div>
+        </div>
+        <div class="story-bottom-panel">
+            <div class="story-title-text" id="story-modal-title">Моё видео</div>
+            <div class="story-views-row">
+                <span>Поставить лайк</span> <span id="modal-likes-count">0</span> &nbsp;&nbsp; <span>💬</span> <span id="modal-comments-count">2</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        
+        <div id="feed-tab" class="tab-content active">
+            <div class="feed-container" id="feed-container"></div>
+        </div>
+
+        <div id="catalog-tab" class="tab-content">
+            <div style="padding: 15px 15px 5px;">
+                <div class="catalog-title" id="cat-title-text">Каталог трендов</div>
+            </div>
+            
+            <div class="neon-challenge-box">
+                <div class="neon-challenge-title" id="cat-challenges-title">Челенджи дня</div>
+                <div class="neon-challenge-tags">
+                    <span class="neon-challenge-tag" onclick="insertTrendTag('#полэтолава')">#полэтолава</span>
+                    <span class="neon-challenge-tag" onclick="insertTrendTag('#dev')">#dev</span>
+                </div>
+            </div>
+
+            <div class="catalog-grid" id="catalog-grid"></div>
+            <div class="section-video-wrapper">
+                <div class="section-video-label" id="cat-videos-label"Ролик бесплатный</div>
+                <div class="videos-grid-container" id="catalog-videos-container"></div>
+            </div>
+        </div>
+
+        <div id="search-tab" class="tab-content">
+            <input type="text" class="search-input" id="search-box" placeholder="Поиск авторов и тегов..." oninput="handleSearch(this.value)">
+            
+            <div class="trends-section">
+                <h4 id="search-trends-title"> Тренд</h4>
+                <div class="trends-tags">
+                    <span class="trend-tag" onclick="insertTrendTag('#неоновыйвайб')">#неоновыйвайб</span>
+                    <span class="trend-tag" onclick="insertTrendTag('#танцуйкакя')">#танцуйкакя</span>
+                    <span class="trend-tag" onclick="insertTrendTag('#captok')">#captok</span>
+                    <span class="trend-tag" onclick="insertTrendTag('#тренды')">#тренды</span>
+                </div>
+            </div>
+
+            <div class="search-results" id="search-results-list"></div>
+            <div class="section-video-wrapper">
+                <div class="section-video-label" id="search-videos-label">Видео:</div>
+                <div class="videos-grid-container" id="search-videos-container"></div>
+            </div>
+        </div>
+
+        <div id="profile-tab" class="tab-content">
+            <div class="profile-header">
+                <div class="speech-bubble" id="profile-bubble-text">Чай или кофе?</div>
+                <div class="profile-avatar-wrapper" onclick="triggerAvatarUpload()">
+                    <div class="profile-avatar" id="profile-avatar-view">🧢</div>
+                    <div class="avatar-edit-badge" id="profile-avatar-edit">Изменить</div>
+                </div>
+                <div class="profile-name-row">
+                    <div class="profile-name" id="profile-name-display">Мой Канал</div>
+                    <div class="pencil-icon" id="profile-pencil" onclick="openNicknameModal()" title="Изменить ник">✏️</div>
+                </div>
+                <div class="profile-bio" id="profile-bio-text">Масштабная творческая платформа captok.studio 🚀 (12+)</div>
+            </div>
+            <div class="profile-menu-list">
+                <div class="profile-menu-item"><span id="m-balance">💰 Баланс</span> <span>›</span></div>
+                <div class="profile-menu-item" onclick="openSettings()"><span id="m-settings">⚙️ Настройки</span> <span>›</span></div>
+            </div>
+            <div class="section-video-wrapper">
+                <div class="section-video-label" id="profile-videos-label">Видео:</div>
+                <div class="videos-grid-container" id="profile-videos-container"></div>
+            </div>
+            <div class="profile-data-section">
+                <h3 class="profile-data-title" id="profile-data-title-text">Данные профиля</h3>
+                <div class="profile-data-row">
+                    <span id="pd-views">Просмотры:</span>
+                    <span class="profile-data-val" id="total-profile-views">0</span>
+                </div>
+                <div class="profile-data-row">
+                    <span id="pd-regdate">Дата регистрации:</span>
+                    <span class="profile-data-val" id="profile-reg-date">...</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="settings-page" class="sub-page">
+        <div class="sub-header">
+            <button class="close-cam" onclick="closeSettings()">‹</button>
+            <span id="settings-header-title">Настройки</span>
+        </div>
+        <div class="profile-menu-list">
+            <div class="profile-menu-item" onclick="openNotifications()"><span id="s-notif">🔔 Уведомления</span> <span>›</span></div>
+            <div class="profile-menu-item" onclick="toggleLanguage()"><span id="s-lang-flag">🇷🇺</span> <span id="s-lang">Язык (Русский)</span> <span>⇄</span></div>
+        </div>
+    </div>
+
+    <div id="notifications-page" class="sub-page">
+        <div class="sub-header">
+            <button class="close-cam" onclick="closeNotifications()">‹</button>
+            <span id="notif-header-title">Уведомления</span>
+        </div>
+        <div id="notif-list-container">
+            </div>
+    </div>
+
+    <div id="camera-modal">
+        <div class="camera-preview-box">
+            <video id="camera-video" autoplay playsinline muted></video>
+            <img id="captured-image-preview" alt="Preview">
+            <video id="captured-video-preview" controls playsinline></video>
+            
+            <div id="live-overlay" style="position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.55); display:none; z-index:10; justify-content:center; align-items:center;">
+                <span style="color:#888; font-size:26px; font-weight:bold; letter-spacing:1px;" id="live-soon-text">Скоро</span>
+            </div>
+        </div>
+        <div class="camera-header">
+            <button class="close-cam" onclick="closeCamera()">✕</button>
+            <div class="create-modes">
+                <span class="create-mode" id="cm-story" onclick="setCreateMode(this, 'story')">История</span>
+                <span class="create-mode active" id="cm-video" onclick="setCreateMode(this, 'video')">Видео</span>
+                <span class="create-mode" id="cm-live" onclick="setCreateMode(this, 'live')">Эфир</span>
+            </div>
+            <button class="close-cam" onclick="switchCameraFacing()">🔄</button>
+        </div>
+        <div class="camera-footer">
+            <div class="gallery-preview-btn" onclick="triggerGalleryUpload()">📁</div>
+            <button class="record-btn" id="record-action-btn" onclick="handleRecordClick()"></button>
+            <div style="width: 50px;"></div>
+        </div>
+    </div>
+
+    <div id="story-publish-editor">
+        <div class="story-publish-box">
+            <h3 id="publish-modal-heading">Укажите название:</h3>
+            <input type="text" class="story-publish-input" id="story-title-input" placeholder="Мое видео...">
+            
+            <h4 style="margin-top: 5px; font-size: 14px; color: #aaa;" id="publish-tags-heading">Выберите до 2-х тегов:</h4>
+            <div id="publish-tags-container" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <div class="selectable-tag" onclick="togglePublishTag(this)">#полэтолава</div>
+                <div class="selectable-tag" onclick="togglePublishTag(this)">#dev</div>
+                <div class="selectable-tag" onclick="togglePublishTag(this)">#неоновыйвайб</div>
+                <div class="selectable-tag" onclick="togglePublishTag(this)">#танцуйкакя</div>
+                <div class="selectable-tag" onclick="togglePublishTag(this)">#captok</div>
+                <div class="selectable-tag" onclick="togglePublishTag(this)">#тренды</div>
+                <div class="selectable-tag" onclick="togglePublishTag(this)">#рекомендации</div>
+            </div>
+
+            <button class="publish-btn" id="publish-final-btn" onclick="publishContentFinal()" style="margin-top: 10px;">Опубликовать</button>
+        </div>
+    </div>
+
+    <input type="file" id="hidden-file-input" accept="image/*,video/*" onchange="handleFileSelected(event)">
+    <input type="file" id="hidden-avatar-input" accept="image/*" onchange="handleAvatarSelected(event)">
+
+    <div class="bottom-nav">
+        <button class="nav-item active" onclick="switchTab(0, this)">
+            <span>🏠</span><span id="nav-l1">Лента</span>
+        </button>
+        <button class="nav-item" onclick="switchTab(1, this)">
+            <span>📂</span><span id="nav-l2">Каталог</span>
+        </button>
+        <button class="nav-center-btn" onclick="openCamera()">+</button>
+        <button class="nav-item" onclick="switchTab(2, this)">
+            <span>🔍</span><span id="nav-l3">Поиск</span>
+        </button>
+        <button class="nav-item" onclick="switchTab(3, this)">
+            <span>🏃🏿</span><span id="nav-l4">Открытл моф аккаунт</span>
+        </button>
+    </div>
+
+</div>
+
+<script>
+    // ЦИФРОВАЯ БАЗА ДАННЫХ СЕАНСОВ (JS DIGITAL DATABASE)
+    const DigitalDB = {
+        data: { sharedVideos: [] },
+        deviceId: '',
+
+        init() {
+            this.deviceId = localStorage.getItem('captok_digital_device_id') || 'device_' + Math.floor(Math.random() * 1000000);
+            localStorage.setItem('captok_digital_device_id', this.deviceId);
+
+            let networkPool = localStorage.getItem('captok_global_digital_pool');
+            if (networkPool) {
+                this.data = JSON.parse(networkPool);
+            }
+            this.sync();
+        },
+
+        sync() {
+            let localVideos = JSON.parse(localStorage.getItem('captok_videos')) || [];
+            
+            localVideos.forEach(lv => {
+                let found = this.data.sharedVideos.find(sv => sv.id === lv.id);
+                if (!found) {
+                    lv.originDevice = this.deviceId;
+                    lv.originalOwner = userNickname;
+                    this.data.sharedVideos.push(lv);
+                } else {
+                    found.likes = lv.likes;
+                    found.comments = lv.comments;
+                    found.calculatedViews = lv.calculatedViews;
+                    found.calculatedLikes = lv.calculatedLikes;
+                    found.calculatedComments = lv.calculatedComments;
+                }
+            });
+
+            this.data.sharedVideos.forEach(sv => {
+                let hasLocal = localVideos.some(lv => lv.id === sv.id);
+                if (!hasLocal) {
+                    localVideos.push(sv);
+                }
+            });
+
+            localStorage.setItem('captok_videos', JSON.stringify(localVideos));
+            localStorage.setItem('captok_global_digital_pool', JSON.stringify(this.data));
+        },
+
+        checkAccess(video) {
+            if (video.isUserUploaded && video.originalOwner && video.originalOwner !== userNickname) {
+                return false;
+            }
+            return true;
+        }
+    };
+
+    // БАЗА ДАННЫХ INDEXEDDB ДЛЯ ВЕЧНОГО СОХРАНЕНИЯ ФАЙЛОВ
+    let db = null;
+    function initDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open('CapTokDB', 1);
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => { db = request.result; resolve(db); };
+            request.onupgradeneeded = (e) => {
+                const database = e.target.result;
+                if (!database.objectStoreNames.contains('mediaFiles')) {
+                    database.createObjectStore('mediaFiles');
+                }
+            };
+        });
+    }
+
+    function saveFileToDB(id, blob) {
+        return new Promise((resolve, reject) => {
+            if (!db) { resolve(); return; }
+            const tx = db.transaction('mediaFiles', 'readwrite');
+            const store = tx.objectStore('mediaFiles');
+            store.put(blob, id);
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
+        });
+    }
+
+    function getFileFromDB(id) {
+        return new Promise((resolve, reject) => {
+            if (!db) { resolve(null); return; }
+            const tx = db.transaction('mediaFiles', 'readonly');
+            const store = tx.objectStore('mediaFiles');
+            const request = store.get(id);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => resolve(null);
+        });
+    }
+
+    let appEntered = false;
+    function enterApp(force = false) {
+        if (appEntered) return;
+        appEntered = true;
+        const splash = document.getElementById('splash-screen');
+        if (splash) {
+            splash.style.opacity = '0';
+            setTimeout(() => splash.remove(), 500);
+        }
+        if (force) {
+            const firstVid = document.querySelector('.feed-container video');
+            if (firstVid) {
+                firstVid.muted = true; // Изменено на true, чтобы обходить блокировку браузерами автозапуска
+                firstVid.play().catch(()=>{});
+            }
+        }
+    }
+
+    // Изменено на true для корректного запуска первого видео при загрузке
+    setTimeout(() => { enterApp(true); }, 3500);
+    setTimeout(() => {
+        if (!appEntered) {
+            const stuckUi = document.getElementById('stuck-ui');
+            if (stuckUi) stuckUi.style.display = 'flex';
+        }
+    }, 5000);
+
+    // КРУПНЫЙ ЯЗЫКОВОЙ ПАКЕТ С ЛОКАЛИЗАЦИЕЙ ФЛАГОВ И СЛОВ
+    let currentLang = 'ru';
+    const langData = {
+        ru: { 
+            l1: 'Лента', l2: 'Каталог', l3: 'Поиск', l4: 'Вы', langText: 'Язык (Русский)', flag: '🇷🇺', 
+            catTitle: 'Каталог трендов', notif: 'Уведомления', settings: 'Настройки', modalTitle: 'Введите ник:', 
+            challengesTitle: 'Челенджи дня', publishHeading: 'Укажите название:', publishPlaceholder: 'Мое видео...',
+            balance: '💰 Баланс', textSearch: 'Поиск авторов и тегов...', textTrends: '🔥 Тренды дня', 
+            textEdit: 'Изменить', textBio: 'Масштабная творческая платформа captok.studio 🚀 (12+)',
+            textData: 'Данные профиля', textViews: 'Просмотры:', textReg: 'Дата регистрации:', textVideos: 'Видео:',
+            textSoon: 'Ты говно сообаче', textPublish: 'Опубликовать', textTagsHead: 'Выберите до 2-х тегов:', textStatusAlg: 'Статус алгоритма:',
+            textToastAccess: 'Полный доступ к видео ограничен! Другое устройство / ник.',
+            textToastTagLimit: 'Можно выбрать только 2 тега'
+        },
+        en: { 
+            l1: 'Feed', l2: 'Catalog', l3: 'Search', l4: 'Profile', langText: 'Language (English)', flag: '🇬🇧', 
+            catTitle: 'Trends Catalog', notif: 'Notifications', settings: 'Settings', modalTitle: 'Enter nickname:', 
+            challengesTitle: 'Daily Challenges', publishHeading: 'Enter title:', publishPlaceholder: 'My video...',
+            balance: '✨ Balance', textSearch: 'Search creators and tags...', textTrends: '🔥 Hot Trends', 
+            textEdit: 'Edit', textBio: 'Creative ecosystem platform captok.studio 🚀 (12+)',
+            textData: 'Profile Analytics', textViews: 'Views:', textReg: 'Registration Date:', textVideos: 'Videos:',
+            textSoon: 'Soon', textPublish: 'Publish Now', textTagsHead: 'Select up to 2 tags:', textStatusAlg: 'AI Algorithm Status:',
+            textToastAccess: 'Full video management restricted! Different device / nickname.',
+            textToastTagLimit: 'You can select up to 2 tags'
+        }
+    };
+
+    function toggleLanguage() {
+        currentLang = currentLang === 'ru' ? 'en' : 'ru';
+        const d = langData[currentLang];
+        document.getElementById('nav-l1').innerText = d.l1;
+        document.getElementById('nav-l2').innerText = d.l2;
+        document.getElementById('nav-l3').innerText = d.l3;
+        document.getElementById('nav-l4').innerText = d.l4;
+        document.getElementById('s-lang').innerText = d.langText;
+        document.getElementById('s-lang-flag').innerText = d.flag;
+        document.getElementById('cat-title-text').innerText = d.catTitle;
+        document.getElementById('s-notif').innerText = '🔔 ' + d.notif;
+        document.getElementById('m-settings').innerText = '⚙️ ' + d.settings;
+        document.getElementById('settings-header-title').innerText = d.settings;
+        document.getElementById('notif-header-title').innerText = d.notif;
+        document.getElementById('modal-title-text').innerText = d.modalTitle;
+        document.getElementById('cat-challenges-title').innerText = d.challengesTitle;
+        document.getElementById('publish-modal-heading').innerText = d.publishHeading;
+        document.getElementById('story-title-input').placeholder = d.publishPlaceholder;
+        document.getElementById('m-balance').innerText = d.balance;
+        document.getElementById('search-box').placeholder = d.textSearch;
+        document.getElementById('search-trends-title').innerText = d.textTrends;
+        document.getElementById('profile-avatar-edit').innerText = d.textEdit;
+        document.getElementById('profile-bio-text').innerText = d.textBio;
+        document.getElementById('profile-data-title-text').innerText = d.textData;
+        document.getElementById('pd-views').innerText = d.textViews;
+        document.getElementById('pd-regdate').innerText = d.textReg;
+        document.getElementById('profile-videos-label').innerText = d.textVideos;
+        document.getElementById('cat-videos-label').innerText = d.textVideos;
+        document.getElementById('search-videos-label').innerText = d.textVideos;
+        document.getElementById('live-soon-text').innerText = d.textSoon;
+        document.getElementById('cm-story').innerText = d.l1 === 'Feed' ? 'Story' : 'История';
+        document.getElementById('cm-video').innerText = d.l1 === 'Feed' ? 'Video' : 'Видео';
+        document.getElementById('cm-live').innerText = d.l1 === 'Feed' ? 'Live' : 'Эфир';
+        document.getElementById('publish-final-btn').innerText = d.textPublish;
+        document.getElementById('publish-tags-heading').innerText = d.textTagsHead;
+        document.getElementById('stats-ai-title').innerText = d.textStatusAlg;
+        document.getElementById('stats-views-label-text').innerText = d.textViews.replace(':', '');
+    }
+
+    let userNickname = localStorage.getItem('captok_nickname') || 'Мой Канал';
+    let userAvatarBase64 = localStorage.getItem('captok_avatar') || null;
+    let lastNickChange = parseInt(localStorage.getItem('captok_nick_last_change')) || 0;
+    
+    let userRegDate = localStorage.getItem('captok_reg_date');
+    if (!userRegDate) {
+        const d = new Date();
+        userRegDate = `${("0"+d.getDate()).slice(-2)}.${("0"+(d.getMonth()+1)).slice(-2)}.${d.getFullYear()}`;
+        localStorage.setItem('captok_reg_date', userRegDate);
+    }
+
+    const randomEmojis = ['🔥', '✨', '🚀', '😎', '🎉', '💡', '💎', '🎨'];
+    function getRandomEmoji() { return randomEmojis[Math.floor(Math.random() * randomEmojis.length)]; }
+
+    let defaultVideos = [
+        { id: 1, author: '@moj_kanal', desc: 'Создаем контент на captok.studio!', tags: '#шаблоныcapcut #captok', likes: 250, comments: 12, isLiked: false, isVideoElement: true, mediaUrl: 'https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-sign-lighting-42999-large.mp4', bg: 'linear-gradient(45deg, #1f005c, #5b0060)', icon: '🧢' },
+        { id: 2, author: '@neon_girl', desc: 'Тестируем маски в CapTok 🔥', tags: '#маски #тренды', likes: 1420, comments: 45, isLiked: false, isVideoElement: true, mediaUrl: 'https://assets.mixkit.co/videos/preview/mixkit-woman-using-a-mobile-phone-in-a-neon-light-41270-large.mp4', bg: 'linear-gradient(45deg, #003366, #00f0ff)', icon: '👩‍🎤' },
+        { id: 3, author: '@creator_pro', desc: 'Трендовые переходы для видео 🚀', tags: '#editing #transitions', likes: 530, comments: 20, isLiked: false, isVideoElement: true, mediaUrl: 'https://assets.mixkit.co/videos/preview/mixkit-dances-of-a-happy-woman-in-a-neon-light-41267-large.mp4', bg: 'linear-gradient(45deg, #660033, #ff0066)', icon: '🎬' }
+    ];
+    let feedVideos = JSON.parse(localStorage.getItem('captok_videos')) || defaultVideos;
+    let notificationsArray = JSON.parse(localStorage.getItem('captok_notifications')) || [];
+
+    const trendingTags = ['#неоновыйвайб', '#танцуйкакя', '#captok', '#тренды', '#полэтолава', '#dev', '#рекомендации'];
+
+    function saveVideosToStorage() {
+        try { 
+            const videosToSave = feedVideos.filter(v => !v.isInfiniteClone);
+            localStorage.setItem('captok_videos', JSON.stringify(videosToSave)); 
+        } catch (e) { console.warn('Storage full'); }
+    }
+    
+    function saveNotifications() {
+        localStorage.setItem('captok_notifications', JSON.stringify(notificationsArray));
+    }
+
+    function addNotification(text, icon = '🔔') {
+        notificationsArray.unshift({ text: text, time: Date.now(), icon: icon });
+        if (notificationsArray.length > 30) notificationsArray.pop();
+        saveNotifications();
+    }
+
+    if (userAvatarBase64) { document.getElementById('profile-avatar-view').innerHTML = `<img src="${userAvatarBase64}">`; }
+    document.getElementById('profile-name-display').innerText = userNickname;
+
+    async function initAppStorage() {
+        try {
+            await initDB();
+            DigitalDB.init(); // Подгрузка и склеивание из базы данных сеансов
+            for (let v of feedVideos) {
+                if (v.isUserUploaded && !v.mediaUrl.startsWith('http')) {
+                    const blob = await getFileFromDB(v.id);
+                    if (blob) {
+                        v.mediaUrl = URL.createObjectURL(blob);
+                    }
+                }
+            }
+        } catch(e) { console.log(e); }
+        checkUrlForVideo();
+        renderFeed();
+        updateProfileDataUI();
+    }
+
+    function checkUrlForVideo() {
+        const hash = window.location.hash;
+        if (hash.includes('video=')) {
+            const videoId = parseInt(hash.split('video=')[1]);
+            const index = feedVideos.findIndex(v => v.id === videoId);
+            if (index > -1) {
+                const targetVideo = feedVideos.splice(index, 1)[0];
+                feedVideos.unshift(targetVideo);
+            }
+        }
+    }
+
+    function timeSince(date) {
+        const seconds = Math.floor((new Date() - date) / 1000);
+        let interval = Math.floor(seconds / 31536000);
+        if (interval >= 1) return interval + " л.";
+        interval = Math.floor(seconds / 2592000);
+        if (interval >= 1) return interval + " мес.";
+        interval = Math.floor(seconds / 86400);
+        if (interval >= 1) return interval + " дн.";
+        interval = Math.floor(seconds / 3600);
+        if (interval >= 1) return interval + " час.";
+        interval = Math.floor(seconds / 60);
+        if (interval >= 1) return interval + " мин.";
+        return Math.floor(seconds) + " сек";
+    }
+
+    function updateProfileDataUI() {
+        let totalViews = 0;
+        feedVideos.forEach(v => {
+            if (v.isUserUploaded && !v.isInfiniteClone) totalViews += (v.calculatedViews || 0);
+        });
+        document.getElementById('total-profile-views').innerText = totalViews.toLocaleString('ru-RU');
+        document.getElementById('profile-reg-date').innerText = userRegDate;
+    }
+
+    // ТАКЖЕ ТЕПЕРЬ ЦИФРЫ НЕ БУДУТ ПАДАТЬ ВНИЗ. ОНИ ОБНОВЛЯЮТСЯ ТОЛЬКО КАЖДЫЕ 15 СЕКУНД
+    setInterval(() => {
+        feedVideos.forEach(video => {
+            if (!video.isUserUploaded || video.isInfiniteClone) return;
+            
+            // Если выбран буст тегов, видео гарантированно получает 3 204 500 просмотров
+            if (video.tagMegaBoost) {
+                video.calculatedViews = 3204500;
+                video.calculatedLikes = 845230;
+                video.calculatedComments = 45100;
+                video.likes = video.calculatedLikes + (video.isLiked ? 1 : 0);
+                video.comments = video.calculatedComments;
+                return;
+            }
+
+            const elapsed = (Date.now() - video.timestamp) / 1000;
+            let stage = 1;
+            if (elapsed > 120) stage = 3; 
+            else if (elapsed > 30) stage = 2; 
+            
+            video.stage = stage;
+            video.calculatedViews = video.calculatedViews || 0;
+            video.calculatedLikes = video.calculatedLikes || 0;
+            video.calculatedComments = video.calculatedComments || 0;
+
+            // Цифры растут строго вверх
+            if (video.aiScore <= 4) {
+                if (video.calculatedViews < 20) video.calculatedViews += Math.floor(Math.random() * 3);
+            } else if (video.aiScore <= 7) {
+                video.calculatedViews += Math.floor(Math.random() * 80);
+                video.calculatedLikes += Math.floor(Math.random() * 10);
+                video.calculatedComments += Math.floor(Math.random() * 2);
+            } else {
+                video.calculatedViews += Math.floor(Math.random() * 2500);
+                video.calculatedLikes += Math.floor(Math.random() * 400);
+                video.calculatedComments += Math.floor(Math.random() * 15);
+            }
+
+            video.likes = video.calculatedLikes + (video.isLiked ? 1 : 0);
+            video.comments = video.calculatedComments;
+
+            if (video.calculatedLikes >= 100 && !video.notified_100_likes) {
+                addNotification(`Вы набрали 100 лайков на "${video.desc}"!`, '🔥');
+                video.notified_100_likes = true;
+            }
+        });
+
+        // Синхронизируем состояние с цифровой базой
+        DigitalDB.sync();
+
+        // ИСПРАВЛЕННЫЙ БАГ: Сохраняем обновленную ИИ-статистику в localStorage устройства
+        saveVideosToStorage();
+
+        // Обновляем открытую страницу статистики и общие блоки
+        if (currentStatsId) {
+            const activeVid = feedVideos.find(v => v.id === currentStatsId);
+            if (activeVid) renderStatsContent(activeVid);
+        }
+        updateProfileDataUI();
+        updateSectionVideoRects();
+    }, 15000); 
+
+    function createVideoItemHTML(v) {
+        let mediaContent = '';
+        if (v.mediaUrl) {
+            // Добавлены атрибуты autoplay muted playsinline для мгновенного автоматического запуска
+            if (v.isVideoElement) mediaContent = `<video id="feed-vid-${v.id}" src="${v.mediaUrl}" loop autoplay muted playsinline></video>`;
+            else mediaContent = `<img src="${v.mediaUrl}">`;
+        } else {
+            mediaContent = `<div style="font-size:70px;">${v.randomEmoji || getRandomEmoji()}</div>`;
+        }
+
+        const heartClass = v.isLiked ? '' : 'gray';
+
+        let statsBtnHtml = '';
+        if (v.isUserUploaded && !v.isInfiniteClone) {
+            statsBtnHtml = `<button class="manage-stats-btn" onclick="openStats(${v.id}, event)">Управление статистикой</button>`;
+        }
+
+        const isMe = v.author === '@' + userNickname.toLowerCase().replace(/\s+/g, '_');
+        const avatarHtml = (userAvatarBase64 && isMe && !v.isInfiniteClone) ? `<img src="${userAvatarBase64}">` : (v.icon || '🧢');
+
+        return `
+            <div class="video-item" id="video-card-${v.id}">
+                <div class="video-mock-bg" style="background: ${v.bg || '#111'};" onclick="toggleFeedVideoPlay(${v.id}, event)">
+                    ${mediaContent}
+                    <div class="play-state-indicator" id="feed-indicator-${v.id}">⏸️</div>
+                </div>
+                <div class="video-overlay"></div>
+                
+                <div class="video-info">
+                    <div class="video-author-row" onclick="alert('Профиль автора')">
+                        <div class="story-ring">
+                            ${avatarHtml}
+                        </div>
+                        <span class="video-author-name">${v.author}</span>
+                    </div>
+                    <div class="video-desc">${v.desc}</div>
+                    <div class="video-tags">${v.tags || '#captok'}</div>
+                    ${statsBtnHtml}
+                </div>
+
+                <div class="video-sidebar">
+                    <button class="side-btn" onclick="likeVideo(${v.id})">
+                        <span class="heart-icon ${heartClass}">👍</span>
+                        <span class="count">${v.likes}</span>
+                    </button>
+                    <button class="side-btn" onclick="openComments(${v.id}, event)">
+                        <span>😎</span>
+                        <span class="count">${v.comments}</span>
+                    </button>
+                    <button class="side-btn" onclick="shareVideo(${v.id})">
+                        <span>🚫</span>
+                        <span class="count">Share</span>
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderFeed() {
+        const container = document.getElementById('feed-container');
+        container.innerHTML = feedVideos.map(v => createVideoItemHTML(v)).join('');
+        setupFeedObserver();
+        updateSectionVideoRects();
+    }
+
+    // БЕСКОНЕЧНАЯ ЛЕНТА
+    let isFetchingVideos = false;
+    document.getElementById('feed-container').addEventListener('scroll', function() {
+        if (this.scrollTop + this.clientHeight >= this.scrollHeight - 300) {
+            if(!isFetchingVideos) {
+                isFetchingVideos = true;
+                setTimeout(() => {
+                    appendMoreVideosToFeed();
+                    isFetchingVideos = false;
+                }, 300);
+            }
+        }
+    });
+
+    function appendMoreVideosToFeed() {
+        const container = document.getElementById('feed-container');
+        const newVideos = defaultVideos.map(v => ({
+            ...v,
+            id: Date.now() + Math.floor(Math.random() * 100000),
+            comments: Math.floor(Math.random() * 100),
+            likes: Math.floor(Math.random() * 1000),
+            isInfiniteClone: true
+        }));
+        
+        feedVideos.push(...newVideos);
+        
+        const html = newVideos.map(v => createVideoItemHTML(v)).join('');
+        container.insertAdjacentHTML('beforeend', html);
+        setupFeedObserver();
+    }
+
+    // ИИ-КОММЕНТАРИИ
+    const highComments = ["Вау, это шедевр 🔥", "Как ты это сделал?", "Лайк не глядя!", "Срочно в реки!", "Просто пушка", "Лучшее за сегодня"];
+    const midComments = ["Неплохо, но можно лучше.", "Норм", "Ожидал худшего", "Концовка топ", "Пойдет для начала", "Средне"];
+    const lowComments = ["Что я только что посмотрел...", "Скукота", "Где смысл?", "Не  👎", "Удали это", "Потерял 10 секунд жизни"];
+    const fakeNames = ["@user9021", "@cool_guy", "@editor_pro", "@neon_light", "@alex_top", "@kisa", "@gamer_123", "@anon"];
+
+    function openComments(id, event) {
+        if(event) event.stopPropagation();
+        const video = feedVideos.find(v => v.id === id);
+        if(!video) return;
+
+        let totalComms = video.comments || 0;
+        document.getElementById('comments-modal-title').innerText = `Комментарии (${totalComms})`;
+
+        if (!video.generatedComments) {
+            video.generatedComments = [];
+            let countToRender = Math.min(totalComms, 12); 
+            if (countToRender === 0 && (video.calculatedComments > 0 || video.comments > 0)) countToRender = 1;
+
+            let pool = highComments;
+            if (video.isUserUploaded) {
+                if (video.aiScore <= 4) pool = lowComments;
+                else if (video.aiScore <= 7) pool = midComments;
+            }
+
+            for (let i = 0; i < countToRender; i++) {
+                video.generatedComments.push({
+                    name: fakeNames[Math.floor(Math.random() * fakeNames.length)],
+                    text: pool[Math.floor(Math.random() * pool.length)],
+                    icon: randomEmojis[Math.floor(Math.random() * randomEmojis.length)]
+                });
+            }
+            saveVideosToStorage();
+        }
+
+        const listContainer = document.getElementById('comments-list-container');
+        if (video.generatedComments.length === 0) {
+            listContainer.innerHTML = '<div style="text-align:center; color:#888; margin-top:20px;">Пока нет комментариев</div>';
+        } else {
+            listContainer.innerHTML = video.generatedComments.map(c => `
+                <div class="comment-item">
+                    <div class="comment-avatar">${c.icon}</div>
+                    <div class="comment-content">
+                        <div class="comment-author">${c.name}</div>
+                        <div class="comment-text">${c.text}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('comments-modal').style.display = 'flex';
+        setTimeout(() => document.getElementById('comments-modal').classList.add('active'), 10);
+    }
+
+    function closeComments() {
+        const modal = document.getElementById('comments-modal');
+        modal.classList.remove('active');
+        setTimeout(() => modal.style.display = 'none', 300);
+    }
+
+    let currentStatsId = null;
+    function openStats(id, event) {
+        event.stopPropagation();
+        const video = feedVideos.find(v => v.id === id);
+        if(!video) return;
+
+        // ЕСЛИ НИК АВТОРА НЕ СОВПАДАЕТ С ДРУГИМ УСТРОЙСТВОМ - ПОЛНЫЙ ДОСТУП НЕДОСТУПЕН
+        if (!DigitalDB.checkAccess(video)) {
+            showToast(langData[currentLang].textToastAccess);
+            return;
+        }
+
+        currentStatsId = id;
+        renderStatsContent(video);
+        document.getElementById('stats-page').classList.add('active');
+    }
+
+    function closeStats() {
+        document.getElementById('stats-page').classList.remove('active');
+        currentStatsId = null;
+    }
+
+    function renderStatsContent(video) {
+        const thumbCont = document.getElementById('stats-page-thumb');
+        if (video.mediaUrl) {
+            if (video.isVideoElement) thumbCont.innerHTML = `<video src="${video.mediaUrl}#t=0.1" muted playsinline></video>`;
+            else thumbCont.innerHTML = `<img src="${video.mediaUrl}">`;
+        } else {
+            thumbCont.innerHTML = `<div style="font-size: 40px;">${video.randomEmoji}</div>`;
+        }
+
+        document.getElementById('stats-page-title').innerText = video.desc;
+        document.getElementById('stats-page-time').innerText = timeSince(video.timestamp) + ' назад';
+        document.getElementById('stats-page-views').innerText = video.calculatedViews;
+        document.getElementById('stats-page-likes').innerText = video.calculatedLikes;
+        document.getElementById('stats-page-comments').innerText = video.calculatedComments;
+
+        let statusText = "";
+        if (video.tagMegaBoost) {
+            statusText = "Мега-буст активен! Достигнут лимит челенджа дня (+3.2M просмотров).";
+        } else {
+            if (video.stage === 1) statusText = "ИИ анализирует видео. Идет подготовка к тестовым показам...";
+            else if (video.stage === 2) statusText = "Тестовый микропоказ (Песочница). Алгоритм смотрит на реакцию первых зрителей.";
+            else if (video.stage === 3) {
+                if (video.aiScore <= 4) statusText = "Заморозка. Видео ушло в архив из-за низкого удержания внимания.";
+                else if (video.aiScore <= 7) statusText = "Органический рост. Видео закрепляется в трендах!";
+                else statusText = "Мгновенный вирусный взлет! Топ рекомендаций!";
+            }
+        }
+        document.getElementById('stats-page-ai-desc').innerText = `Оценка ИИ: ${video.tagMegaBoost ? 10 : video.aiScore}/10.\n${statusText}`;
+    }
+
+    let statStartY = 0;
+    const statsPage = document.getElementById('stats-page');
+    const refreshIndicator = document.getElementById('stats-refresh-text');
+    
+    statsPage.addEventListener('touchstart', e => {
+        if (statsPage.scrollTop === 0) statStartY = e.touches[0].clientY;
+    });
+    statsPage.addEventListener('touchmove', e => {
+        if (statStartY && e.touches[0].clientY - statStartY > 60) {
+            refreshIndicator.style.height = '20px';
+            refreshIndicator.style.marginTop = '10px';
+        }
+    });
+    statsPage.addEventListener('touchend', e => {
+        if (statStartY && e.changedTouches[0].clientY - statStartY > 60) {
+            setTimeout(() => {
+                const video = feedVideos.find(v => v.id === currentStatsId);
+                if (video && DigitalDB.checkAccess(video)) {
+                    renderStatsContent(video);
+                    renderFeed();
+                }
+                refreshIndicator.style.height = '0';
+                refreshIndicator.style.marginTop = '0';
+            }, 500);
+        }
+        statStartY = 0;
+    });
+
+    function setupFeedObserver() {
+        const container = document.getElementById('feed-container');
+        const items = container.querySelectorAll('.video-item');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const videoEl = entry.target.querySelector('video');
+                if (videoEl) {
+                    if (entry.isIntersecting) {
+                        videoEl.play().catch(() => {
+                            videoEl.muted = true;
+                            videoEl.play().catch(()=>{});
+                        });
+                    } else {
+                        videoEl.pause();
+                        videoEl.currentTime = 0;
+                    }
+                }
+            });
+        }, { threshold: 0.6 });
+        items.forEach(item => observer.observe(item));
+    }
+
+    let hideTimeouts = {};
+    function toggleFeedVideoPlay(id, event) {
+        const vid = document.getElementById(`feed-vid-${id}`);
+        if (!vid) return;
+        const indicator = document.getElementById(`feed-indicator-${id}`);
+        
+        if (vid.muted) {
+            vid.muted = false;
+            if (vid.paused) vid.play();
+            indicator.innerText = '🔊';
+        } else {
+            if (vid.paused) { vid.play(); indicator.innerText = '▶️'; }
+            else { vid.pause(); indicator.innerText = '⏸️'; }
+        }
+
+        indicator.classList.add('show');
+        if (hideTimeouts[id]) clearTimeout(hideTimeouts[id]);
+        hideTimeouts[id] = setTimeout(() => { indicator.classList.remove('show'); }, 600);
+    }
+
+    function updateSectionVideoRects() {
+        const containers = ['catalog-videos-container', 'search-videos-container', 'profile-videos-container'];
+        containers.forEach(containerId => {
+            const cont = document.getElementById(containerId);
+            if (!cont) return;
+            cont.innerHTML = feedVideos.filter(v => !v.isInfiniteClone).map((v, index) => {
+                let innerContent = '';
+                if (v.mediaUrl) {
+                    if (v.isVideoElement) innerContent = `<video src="${v.mediaUrl}" muted playsinline></video>`;
+                    else innerContent = `<img src="${v.mediaUrl}">`;
+                } else innerContent = `<div style="font-size:35px;">${v.randomEmoji || '🎬'}</div>`;
+                
+                return `<div class="video-rect-9-16" onclick="openVideoModal(${v.id})">${innerContent}</div>`;
+            }).join('');
+        });
+    }
+
+    function openVideoModal(id) {
+        const targetVideo = feedVideos.find(v => v.id === id) || feedVideos[0];
+        const modal = document.getElementById('story-modal');
+        document.getElementById('story-modal-author').innerText = targetVideo.author;
+        document.getElementById('story-modal-title').innerText = targetVideo.desc;
+        document.getElementById('modal-likes-count').innerText = targetVideo.likes;
+        document.getElementById('modal-comments-count').innerText = targetVideo.comments;
+
+        const bgView = document.getElementById('story-bg-view');
+        if (targetVideo.mediaUrl) {
+            if (targetVideo.isVideoElement) bgView.innerHTML = `<video id="modal-video-element" src="${targetVideo.mediaUrl}" loop playsinline></video><div class="play-state-indicator" id="modal-play-indicator">⏸️</div>`;
+            else bgView.innerHTML = `<img src="${targetVideo.mediaUrl}"><div class="play-state-indicator" id="modal-play-indicator">⏸️</div>`;
+        } else {
+            bgView.innerHTML = `<div style="font-size:80px;">${targetVideo.randomEmoji || '🎬'}</div><div class="play-state-indicator" id="modal-play-indicator">⏸️</div>`;
+        }
+
+        if (userAvatarBase64 && targetVideo.author === '@' + userNickname.toLowerCase().replace(/\s+/g, '_')) {
+            document.getElementById('story-modal-avatar').innerHTML = `<img src="${userAvatarBase64}">`;
+        } else document.getElementById('story-modal-avatar').innerHTML = targetVideo.icon || '🧢';
+
+        modal.style.display = 'flex';
+        setTimeout(() => {
+            modal.classList.add('active');
+            const modVid = document.getElementById('modal-video-element');
+            if(modVid) modVid.play().catch(() => { modVid.muted = true; modVid.play().catch(()=>{}); });
+        }, 10);
+    }
+
+    let modalHideTimeout = null;
+    function toggleModalVideoPlay(event) {
+        event.stopPropagation();
+        const vid = document.getElementById('modal-video-element');
+        if (!vid) return;
+        const indicator = document.getElementById('modal-play-indicator');
+        if (vid.muted) { vid.muted = false; if (vid.paused) vid.play(); indicator.innerText = '🔊'; }
+        else {
+            if (vid.paused) { vid.play(); indicator.innerText = 'Матвей поалуы'; }
+            else { vid.pause(); indicator.innerText = '⏸️'; }
+        }
+        indicator.classList.add('show');
+        if (modalHideTimeout) clearTimeout(modalHideTimeout);
+        modalHideTimeout = setTimeout(() => { indicator.classList.remove('show'); }, 600);
+    }
+
+    let startY = 0;
+    const storyModal = document.getElementById('story-modal');
+    storyModal.addEventListener('touchstart', (e) => { startY = e.touches[0].clientY; });
+    storyModal.addEventListener('touchmove', (e) => { if (e.touches[0].clientY - startY < -50) closeStoryModal(); });
+    function closeStory(e) { if(e.target === storyModal) closeStoryModal(); }
+    function closeStoryModal() {
+        storyModal.classList.remove('active');
+        setTimeout(() => {
+            storyModal.style.display = 'none';
+            const vid = document.getElementById('modal-video-element');
+            if (vid) { vid.pause(); vid.currentTime = 0; }
+        }, 300);
+    }
+
+    function likeVideo(id) {
+        const target = feedVideos.find(v => v.id === id);
+        if(target) { 
+            target.isLiked = !target.isLiked;
+            if(target.isUserUploaded && !target.isInfiniteClone) {
+                target.likes = target.calculatedLikes + (target.isLiked ? 1 : 0);
+            } else {
+                target.likes = target.isLiked ? (target.likes + 1) : (target.likes - 1);
+            }
+            saveVideosToStorage(); 
+            const btnSpan = document.querySelector(`#video-card-${id} .heart-icon`);
+            const countSpan = document.querySelector(`#video-card-${id} .heart-icon + .count`);
+            if (btnSpan) {
+                if (target.isLiked) btnSpan.classList.remove('gray'); else btnSpan.classList.add('gray');
+                countSpan.innerText = target.likes;
+            }
+        }
+    }
+
+    function shareVideo(videoId) {
+        const videoUrl = `${window.location.href.split('#')[0]}#video=${videoId}`;
+        navigator.clipboard.writeText(videoUrl).then(() => showToast('Ссылка скопирована!')).catch(() => showToast('Ссылка скопирована!'));
+    }
+    
+    function showToast(msg) {
+        const toast = document.getElementById('toast-notification');
+        toast.innerText = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+
+    const catalogItems = [ { title: '#шаблоныcapcut: Киберпанк', desc: 'Динамичный неоновый шаблон' }, { title: '#шаблоныcapcut: Пленка 90х', desc: 'Винтажный стиль' } ];
+    function renderCatalog() {
+        document.getElementById('catalog-grid').innerHTML = catalogItems.map(item => `
+            <div class="catalog-card" onclick="alert('Переход в CapCut...')"><h4>${item.title}</h4><p>${item.desc}</p></div>
+        `).join('');
+    }
+    renderCatalog();
+
+    function insertTrendTag(tag) {
+        const searchBox = document.getElementById('search-box');
+        searchBox.value = tag;
+        handleSearch(tag);
+    }
+
+    function handleSearch(query) {
+        const list = document.getElementById('search-results-list');
+        if(!query.trim()) { list.innerHTML = ''; return; }
+        const filtered = feedVideos.filter(v => !v.isInfiniteClone && (v.author.includes(query) || v.tags.includes(query)));
+        list.innerHTML = filtered.map(v => `
+            <div class="search-result-item" onclick="switchTab(0, document.querySelectorAll('.bottom-nav .nav-item')[0])">
+                <div>${v.icon || '👑'}</div><div><b>${v.author}</b><br><small>${v.desc}</small></div>
+            </div>
+        `).join('');
+    }
+
+    function openNicknameModal() { 
+        const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+        if (Date.now() - lastNickChange < WEEK_MS) {
+            const daysLeft = Math.ceil((WEEK_MS - (Date.now() - lastNickChange)) / (1000 * 60 * 60 * 24));
+            showToast(`Ник можно менять раз в неделю. Ждать дней: ${daysLeft}`);
+            return;
+        }
+        document.getElementById('nickname-input-field').value = userNickname; 
+        document.getElementById('nickname-modal').style.display = 'flex'; 
+    }
+    
+    function saveNickname() {
+        const newName = document.getElementById('nickname-input-field').value.trim();
+        if (newName) {
+            userNickname = newName; localStorage.setItem('captok_nickname', userNickname);
+            lastNickChange = Date.now();
+            localStorage.setItem('captok_nick_last_change', lastNickChange);
+            document.getElementById('profile-name-display').innerText = userNickname;
+            
+            feedVideos.forEach(v => {
+                if (v.isUserUploaded && !v.isInfiniteClone && v.originalOwner === undefined) {
+                    v.author = '@' + userNickname.toLowerCase().replace(/\s+/g, '_');
+                }
+            });
+            saveVideosToStorage(); renderFeed();
+        }
+        document.getElementById('nickname-modal').style.display = 'none';
+    }
+
+    function triggerAvatarUpload() { document.getElementById('hidden-avatar-input').click(); }
+    function handleAvatarSelected(event) {
+        const file = event.target.files[0];
+        if(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                userAvatarBase64 = e.target.result; localStorage.setItem('captok_avatar', userAvatarBase64);
+                document.getElementById('profile-avatar-view').innerHTML = `<img src="${userAvatarBase64}">`;
+                renderFeed();
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function openSettings() { document.getElementById('settings-page').classList.add('active'); }
+    function closeSettings() { document.getElementById('settings-page').classList.remove('active'); }
+    
+    function openNotifications() { 
+        document.getElementById('notifications-page').classList.add('active'); 
+        renderNotificationsList();
+    }
+    function closeNotifications() { document.getElementById('notifications-page').classList.remove('active'); }
+
+    function renderNotificationsList() {
+        const container = document.getElementById('notif-list-container');
+        if (notificationsArray.length === 0) {
+            container.innerHTML = '<div style="text-align:center; color:#888; margin-top:30px;">Здесь будут ваши уведомления</div>';
+            return;
+        }
+        container.innerHTML = notificationsArray.map(n => `
+            <div class="notif-item">
+                <div class="notif-icon">${n.icon}</div>
+                <div class="notif-text">
+                    ${n.text}<br><small>${timeSince(n.time)} назад</small>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    const tabs = document.querySelectorAll('.tab-content');
+    const navItems = document.querySelectorAll('.bottom-nav .nav-item');
+    function switchTab(index, element) {
+        tabs.forEach(tab => tab.classList.remove('active'));
+        navItems.forEach(item => item.classList.remove('active'));
+        const targets = ['feed-tab', 'catalog-tab', 'search-tab', 'profile-tab'];
+        document.getElementById(targets[index]).classList.add('active');
+        if(element) element.classList.add('active');
+    }
+
+    let mediaStream = null; let useFrontCamera = true; let mediaRecorder = null; let recordedChunks = []; let isRecording = false; let currentCreationMode = 'video'; let tempCapturedMediaUrl = null; let isVideoAsset = false; let rawFileBlob = null;
+    let selectedPublishTags = [];
+
+    async function openCamera() {
+        document.getElementById('camera-modal').style.display = 'flex';
+        document.getElementById('captured-image-preview').style.display = 'none';
+        document.getElementById('captured-video-preview').style.display = 'none';
+        
+        // Сбрасываем режим Эфира при новом открытии на стандартное видео
+        setCreateMode(document.getElementById('cm-video'), 'video');
+        
+        tempCapturedMediaUrl = null;
+        rawFileBlob = null;
+        selectedPublishTags = [];
+        document.querySelectorAll('.selectable-tag').forEach(el => el.classList.remove('selected'));
+        try {
+            mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: useFrontCamera ? 'user' : 'environment' }, audio: true });
+            const camVideo = document.getElementById('camera-video');
+            camVideo.srcObject = mediaStream; camVideo.muted = true; camVideo.play().catch(() => {});
+        } catch(e) { alert('Вмдео щагуркнр бро'); }
+    }
+
+    function closeCamera() {
+        document.getElementById('camera-modal').style.display = 'none';
+        if(mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
+        if(isRecording) stopRecording();
+    }
+
+    function switchCameraFacing() { useFrontCamera = !useFrontCamera; if(mediaStream) mediaStream.getTracks().forEach(t => t.stop()); openCamera(); }
+
+    // ЛОГИКА ДОБАВЛЕНИЯ ЭФИРА С ЗАТЕМНЕНИЕМ И СЕРЫМ "СКОРО"
+    function setCreateMode(el, mode) {
+        document.querySelectorAll('.create-mode').forEach(m => {
+            m.classList.remove('active');
+            m.style.color = '#aaa';
+        });
+        
+        currentCreationMode = mode;
+        const liveOverlay = document.getElementById('live-overlay');
+        const recordBtn = document.getElementById('record-action-btn');
+
+        if (mode === 'live') {
+            el.style.color = 'red';
+            el.classList.add('active');
+            liveOverlay.style.display = 'flex';
+            recordBtn.style.opacity = '0.3';
+            recordBtn.style.pointerEvents = 'none';
+        } else {
+            el.classList.add('active');
+            el.style.color = '#00f0ff';
+            liveOverlay.style.display = 'none';
+            recordBtn.style.opacity = '1';
+            recordBtn.style.pointerEvents = 'auto';
+            if(mode === 'story') { recordBtn.classList.remove('recording'); isRecording = false; }
+        }
+    }
+
+    function handleRecordClick() {
+        if (currentCreationMode === 'live') return;
+        if(currentCreationMode === 'story') capturePhotoForStory();
+        else { if(!isRecording) startVideoRecording(); else stopVideoRecording(); }
+    }
+
+    function capturePhotoForStory() {
+        const video = document.getElementById('camera-video');
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth || 400; canvas.height = video.videoHeight || 700;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        canvas.toBlob(blob => {
+            rawFileBlob = blob;
+            tempCapturedMediaUrl = URL.createObjectURL(blob);
+            isVideoAsset = false;
+            
+            const previewImg = document.getElementById('captured-image-preview');
+            previewImg.src = tempCapturedMediaUrl; previewImg.style.display = 'block';
+            
+            document.getElementById('publish-modal-heading').innerText = langData[currentLang].publishHeading;
+            document.getElementById('story-publish-editor').style.display = 'flex';
+            document.getElementById('story-title-input').value = '';
+        }, 'image/png');
+    }
+
+    function startVideoRecording() {
+        if(!mediaStream) return;
+        recordedChunks = [];
+        try { mediaRecorder = new MediaRecorder(mediaStream, { mimeType: 'video/webm' }); } 
+        catch (e) { try { mediaRecorder = new MediaRecorder(mediaStream); } catch (err) { alert('Запись видео не поддерживается.'); return; } }
+
+        mediaRecorder.ondataavailable = function(e) { if(e.data && e.data.size > 0) recordedChunks.push(e.data); };
+        
+        mediaRecorder.onstop = function() {
+            rawFileBlob = new Blob(recordedChunks, { type: 'video/webm' });
+            tempCapturedMediaUrl = URL.createObjectURL(rawFileBlob); 
+            isVideoAsset = true;
+            const previewVid = document.getElementById('captured-video-preview');
+            previewVid.src = tempCapturedMediaUrl; previewVid.style.display = 'block'; previewVid.play();
+            document.getElementById('publish-modal-heading').innerText = langData[currentLang].publishHeading;
+            document.getElementById('story-publish-editor').style.display = 'flex'; document.getElementById('story-title-input').value = '';
+        };
+        mediaRecorder.start(); isRecording = true; document.getElementById('record-action-btn').classList.add('recording');
+    }
+
+    function stopVideoRecording() {
+        if(mediaRecorder && isRecording) { mediaRecorder.stop(); isRecording = false; document.getElementById('record-action-btn').classList.remove('recording'); }
+    }
+
+    function triggerGalleryUpload() { document.getElementById('hidden-file-input').click(); }
+    
+    function handleFileSelected(event) {
+        const file = event.target.files[0];
+        if(file) {
+            rawFileBlob = file;
+            isVideoAsset = file.type.startsWith('video');
+            tempCapturedMediaUrl = URL.createObjectURL(file); 
+            
+            if(isVideoAsset) {
+                const previewVid = document.getElementById('captured-video-preview');
+                previewVid.src = tempCapturedMediaUrl; previewVid.style.display = 'block'; previewVid.play();
+            } else {
+                const previewImg = document.getElementById('captured-image-preview');
+                previewImg.src = tempCapturedMediaUrl; previewImg.style.display = 'block';
+            }
+            document.getElementById('publish-modal-heading').innerText = isVideoAsset ? langData[currentLang].publishHeading : langData[currentLang].publishHeading;
+            document.getElementById('story-publish-editor').style.display = 'flex';
+            document.getElementById('story-title-input').value = '';
+        }
+    }
+
+    function togglePublishTag(el) {
+        const tag = el.innerText;
+        if (selectedPublishTags.includes(tag)) {
+            selectedPublishTags = selectedPublishTags.filter(t => t !== tag);
+            el.classList.remove('selected');
+        } else {
+            if (selectedPublishTags.length >= 2) {
+                showToast(langData[currentLang].textToastTagLimit);
+                return;
+            }
+            selectedPublishTags.push(tag);
+            el.classList.add('selected');
+        }
+    }
+
+    async function publishContentFinal() {
+        const titleVal = document.getElementById('story-title-input').value.trim() || (isVideoAsset ? 'Мое видео' : 'Моя история');
+        
+        let aiScore = Math.floor(Math.random() * 10) + 1;
+        const hasTrend = selectedPublishTags.some(t => ['#неоновыйвайб', '#танцуйкакя', '#captok', '#рекомендации'].includes(t));
+        if (hasTrend) {
+            aiScore += 2; 
+            if (aiScore > 10) aiScore = 10;
+        }
+
+        // ПРОВЕРКА СЕКРЕТНЫХ ТЕГОВ НА БУСТ ПРОСМОТРОВ (3 204 500)
+        const isMegaBoost = selectedPublishTags.includes('#полэтолава') && selectedPublishTags.includes('#dev');
+
+        const uploadTime = Date.now();
+        const newVideoId = Date.now();
+
+        if (rawFileBlob) {
+            await saveFileToDB(newVideoId, rawFileBlob);
+        }
+        
+        const finalTags = ['#captok', ...selectedPublishTags].join(' ');
+
+        const newVideoObj = {
+            id: newVideoId,
+            author: '@' + userNickname.toLowerCase().replace(/\s+/g, '_'),
+            desc: titleVal,
+            tags: finalTags,
+            likes: isMegaBoost ? 845230 : 0,
+            comments: isMegaBoost ? 45100 : 0,
+            isLiked: false,
+            isVideoElement: isVideoAsset,
+            mediaUrl: tempCapturedMediaUrl,
+            bg: '#000',
+            randomEmoji: getRandomEmoji(),
+            icon: userAvatarBase64 ? '' : '😀',
+            isUserUploaded: true,
+            timestamp: uploadTime,
+            aiScore: aiScore,
+            calculatedViews: isMegaBoost ? 3204500 : 0,
+            calculatedLikes: isMegaBoost ? 845230 : 0,
+            calculatedComments: isMegaBoost ? 45100 : 0,
+            stage: 1,
+            tagMegaBoost: isMegaBoost,
+            originalOwner: userNickname // Сохраняем владельца сессии для базы сеансов
+        };
+        
+        feedVideos.unshift(newVideoObj);
+        saveVideosToStorage();
+
+        // Отправка в глобальную JS-базу сеансов
+        DigitalDB.sync();
+
+        document.getElementById('story-publish-editor').style.display = 'none';
+        closeCamera();
+        
+        switchTab(0, document.querySelectorAll('.bottom-nav .nav-item')[0]);
+        renderFeed();
+        updateProfileDataUI();
+        
+        setTimeout(() => {
+            document.getElementById('feed-container').scrollTo({ top: 0, behavior: 'smooth' });
+        }, 50);
+    }
+
+    initAppStorage();
+</script>
+
+</body>
+</html>
